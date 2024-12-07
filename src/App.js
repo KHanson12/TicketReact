@@ -121,7 +121,7 @@ refundButton = async (event) => {
   const accounts = await web3.eth.getAccounts();
   try {
     this.setState({webPageAlert: 'Loading refund'});
-    await ecom.methods.resaleTicket(ticketPrice).send({from: accounts[0]});
+    await ecom.methods.resaleTicket(ticketPrice).send({from: accounts[0],gasPrice:800000000,gas:4700000});
     await ecom.methods.acceptResale(refundedTicket).send({from: this.state.manager,value: this.state.ticketPrice,gasPrice:800000000,gas:4700000});
     this.setState({webPageAlert: 'Ticket refunded'});
   } catch (error) {
