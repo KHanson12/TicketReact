@@ -14,8 +14,8 @@ class App extends React.Component {
     buyTicket: '',
     offerSwap: '',
     acceptSwap: '',
+    refundedTicket: '',
   };
-
   async componentDidMount() {
     try {
       const manager = await ecom.methods.manager().call();
@@ -24,7 +24,6 @@ class App extends React.Component {
       console.log('Manager:', manager);
       console.log('Total Tickets:', ticketNum);
       console.log('Ticket Price:', ticketPrice);
-
       this.setState({manager, ticketNum, ticketPrice});
     } catch (error) {
       console.error("Error:", error);
@@ -38,7 +37,7 @@ class App extends React.Component {
         <h2>
           The manager of this contract is {this.state.manager || 'Please refresh.'}
           <br />
-          There are {this.state.ticketNum.toString() || 'Please refresh'} tickets priced at {this.state.ticketPrice.toString() || 'Please refresh'} wei each.
+          There are {this.state.ticketNum.toString() || 'Please refresh'} tickets priced at {web3.utils.toWei(this.state.ticketPrice, 'ether').toString() || 'Please refresh'} wei each.
         </h2>
         <div>
           <form onSubmit={this.buyButton} className="Box"> Buy a Ticket:
@@ -58,6 +57,11 @@ class App extends React.Component {
             <input placeholder="Enter an address of a user" value={this.state.addressOf} onChange={(event) => this.setState({addressOf: event.target.value})}/>
             <button>Enter</button>
           </form>
+          <br />
+          <form onSubmit={this.refundButton} className="Box"> Refund Your Ticket:
+            <input placeholder="Enter your ticket ID" value={this.state.refundedTicket} onChange={(event) => this.setState({refundedTicket: event.target.value})}/>
+            <button>Enter</button>
+          </form>
           {<p>{this.state.currentTicket.toString()}</p>}
         </div>
         <p>{this.state.webPageAlert}</p>
@@ -71,10 +75,7 @@ class App extends React.Component {
     const accounts = await web3.eth.getAccounts();
     try {
       this.setState({ webPageAlert: 'Loading ticket purchase' });
-      await ecom.methods.buyTicket(buyTicket).send({
-        from: accounts[0],
-        value: this.state.ticketPrice,
-      });
+      await ecom.methods.buyTicket(buyTicket).send({from: accounts[0],value: web3.utils.toWei(this.state.ticketPrice,'ether').toString(),gasPrice:800000000,gas:4700000});
       this.setState({webPageAlert: 'Ticket purchase successful'});
     } catch (error) {
       this.setState({webPageAlert:'Buy ticket failed'});
@@ -86,7 +87,7 @@ class App extends React.Component {
     const accounts = await web3.eth.getAccounts();
     try {
       this.setState({webPageAlert:'Loading swap offer'});
-      await ecom.methods.offerSwap(offerSwap).send({from: accounts[0]});
+      await ecom.methods.offerSwap(offerSwap).send({from: accounts[0],gasPrice:800000000,gas:4700000});
       this.setState({webPageAlert:'Swap offer successful'});
     } catch (error) {
       this.setState({webPageAlert:'Swap offer failed'});
@@ -98,7 +99,7 @@ class App extends React.Component {
     const accounts = await web3.eth.getAccounts();
     try {
       this.setState({webPageAlert: 'Loading accept swap'});
-      await ecom.methods.acceptSwap(acceptSwap).send({from: accounts[0]});
+      await ecom.methods.acceptSwap(acceptSwap).send({from: accounts[0],gasPrice:800000000,gas:4700000});
       this.setState({webPageAlert:'Accept swap successful'});
     } catch (error) {
       this.setState({webPageAlert: 'Accept swap failed'});
@@ -112,6 +113,19 @@ class App extends React.Component {
     this.setState({currentTicket});
   } catch (error) {
     this.setState({currentTicket: 'Could not get ticket of this user. They may not exist or have one.'});
+  }
+};
+refundButton = async (event) => {
+  event.preventDefault();
+  const {ticketPrice,refundedTicket} = this.state;
+  const accounts = await web3.eth.getAccounts();
+  try {
+    this.setState({webPageAlert: 'Loading refund'});
+    await ecom.methods.resaleTicket(ticketPrice).send({from: accounts[0]});
+    await ecom.methods.acceptResale(refundedTicket).send({from: this.state.manager,value: this.state.ticketPrice,gasPrice:800000000,gas:4700000});
+    this.setState({webPageAlert: 'Ticket refunded'});
+  } catch (error) {
+    this.setState({webPageAlert: 'Refund failed'});
   }
 };
 }
