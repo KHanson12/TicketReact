@@ -1,9 +1,19 @@
 .App {
   text-align: center;
-  background-color:blue;
+  background-color:darkolivegreen;
+  height:100%;
   color:white;
+  background-size:cover;
+  position:absolute;
+  width:100%;
 }
-
+.Box {
+border-style:inset;
+background-color:black;
+padding: 2%;
+padding-right:3%;
+display:inline-block;
+}
 .App-logo {
   height: 40vmin;
   pointer-events: none;
